@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Project sondevoeding</string>
+    <string name="button">"Sondepomp 1"</string>
+    <string name="enterMessage">Send message></string>
+    <string name="channel_name">Sondepomp meldingen</string>
+    <string name="channel_description">Hier staan de instellingen van de sondepomp meldingen</string>
+</resources>
