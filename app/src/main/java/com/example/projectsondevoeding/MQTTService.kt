@@ -13,6 +13,7 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -27,7 +28,7 @@ class MQTTService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "foreground_service_channel"
-        private const val mqttBroker = "tcp://192.168.0.194:1883"
+        private const val mqttBroker = "tcp://192.168.0.155:1883"
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -36,9 +37,9 @@ class MQTTService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
         startForegroundService()
         subscribeMQTT()
-        createNotificationChannel()
     }
 
     private fun startForegroundService() {
@@ -79,8 +80,13 @@ class MQTTService : Service() {
                 // No-op
             }
         })
-        mqttClient.connect(options)
-        mqttClient.subscribe("beep_detection")
+
+        try {
+            mqttClient.connect(options)
+            mqttClient.subscribe("beep_detection")
+        } catch (e: Exception) {
+            Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e.message}")
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -88,7 +94,6 @@ class MQTTService : Service() {
         Thread {
             try {
                 val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
-                Log.d("MQTT", "connected")
 
                 val options = MqttConnectOptions().apply {
                     userName = "remco"
@@ -173,9 +178,15 @@ class MQTTService : Service() {
         }
 
     }
+
+    fun startStopSondeVoeding(view: View) {
+
+    }
 }
 
 class NotificationReceiver : BroadcastReceiver() {
+
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent?.action == "projectsondevoeding.ACTION_SNOOZE") {

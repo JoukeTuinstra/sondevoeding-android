@@ -6,9 +6,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import org.eclipse.paho.client.mqttv3.MqttClient
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MainActivity : AppCompatActivity() {
 
@@ -71,6 +75,37 @@ class MainActivity : AppCompatActivity() {
         } else {
             startService(serviceIntent)
         }
+    }
+
+    fun startStopSondeVoeding(view:View) {
+        Thread {
+            try {
+                val mqttClient = MqttClient("tcp://192.168.0.155:1883", MqttClient.generateClientId(), null)
+
+                val options = MqttConnectOptions().apply {
+                    userName = "remco"
+                    password = "remco".toCharArray()
+                }
+
+                mqttClient.connect(options)
+
+                val topic = "test"
+                val message = MqttMessage().apply {
+                    payload = "servo".toByteArray()
+                }
+
+                mqttClient.publish(topic, message)
+                mqttClient.disconnect()
+
+
+            } catch (e: Exception) {
+                Log.e(
+                    "MQTT Error",
+                    "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
+                    e
+                )
+            }
+        }.start()
     }
 }
 
