@@ -23,18 +23,23 @@ import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.json.JSONObject
+import kotlin.reflect.typeOf
 
 class MQTTService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "foreground_service_channel"
-        private const val mqttBroker = "tcp://192.168.0.155:1883"
+        private const val mqttBroker = "tcp://192.168.0.136:1883"
+        private var devices = arrayOf("available_devices")
+        private var hasChecked = false
     }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -58,23 +63,41 @@ class MQTTService : Service() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun subscribeMQTT() {
         val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
         val options = MqttConnectOptions().apply {
-            userName = "remco"
-            password = "remco".toCharArray()
+            userName = "asvz"
+            password = "asvz".toCharArray()
         }
+
         mqttClient.setCallback(object : MqttCallback {
             override fun connectionLost(cause: Throwable?) {
-                Log.d("MQTTService", "Connection lost: ${cause?.message}")
+                Log.e("MQTTService", "Connection lost", cause)
             }
 
             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
             override fun messageArrived(topic: String?, message: MqttMessage?) {
-                Log.d("MQTTService", "Message arrived: $message")
-                sendNotification()
-            }
+                Log.d("MQTTService", "Message arrived: ${message.toString()}")
+                message?.let {
+                    val messageString = String(it.payload)  // Convert byte array to string
+                    if (messageString == "beep_detected") {
+                        sendNotification()
+                    }
+                    if (messageString.startsWith("who is here{")) {
+                        val updatedString = messageString.replace("who is here", "")
 
+                        val availableDevices = JSONObject(updatedString).getJSONObject("topics")
+                            .getJSONArray("sending")
+
+                        val sendingArray =
+                            Array(availableDevices.length()) { i -> availableDevices.getString(i) }
+                        devices = sendingArray
+                        subscribeMQTT()
+
+                    }
+                }
+            }
 
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
                 // No-op
@@ -83,30 +106,30 @@ class MQTTService : Service() {
 
         try {
             mqttClient.connect(options)
-            mqttClient.subscribe("beep_detection")
+            mqttClient.subscribe(devices)
+            if (!hasChecked) {
+                sendMQTTMessage(
+                    "available_devices",
+                    MqttMessage().apply { payload = "who_is_here".toByteArray() })
+                hasChecked = true
+            }
         } catch (e: Exception) {
             Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e.message}")
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun sendMQTTServo() {
+    fun sendMQTTMessage(topic: String, message: MqttMessage) {
         Thread {
             try {
                 val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
 
                 val options = MqttConnectOptions().apply {
-                    userName = "remco"
-                    password = "remco".toCharArray()
+                    userName = "asvz"
+                    password = "asvz".toCharArray()
                 }
 
                 mqttClient.connect(options)
-
-                val topic = "test"
-                val message = MqttMessage().apply {
-                    payload = "servo".toByteArray()
-                }
-
                 mqttClient.publish(topic, message)
                 mqttClient.disconnect()
 
@@ -178,14 +201,9 @@ class MQTTService : Service() {
         }
 
     }
-
-    fun startStopSondeVoeding(view: View) {
-
-    }
 }
 
 class NotificationReceiver : BroadcastReceiver() {
-
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -193,7 +211,10 @@ class NotificationReceiver : BroadcastReceiver() {
             // Handle the action here, for example, call buttonClicked()
             Log.d("NotificationReceiver", "Ignore button clicked")
             val service = MQTTService()
-            service.sendMQTTServo()
+            service.sendMQTTMessage(
+                "sonde1",
+                MqttMessage().apply { payload = "servo".toByteArray() })
         }
     }
+
 }

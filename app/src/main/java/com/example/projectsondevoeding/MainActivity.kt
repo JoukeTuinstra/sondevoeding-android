@@ -13,6 +13,7 @@ import androidx.core.app.ActivityCompat
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.lang.reflect.Executable
 
 class MainActivity : AppCompatActivity() {
 
@@ -70,26 +71,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun startMQTTService() {
         val serviceIntent = Intent(this, MQTTService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent)
-        } else {
-            startService(serviceIntent)
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            Log.e("MQTT service error", "Is the server running?", e)
         }
     }
 
-    fun startStopSondeVoeding(view:View) {
+    fun startStopSondeVoeding(view: View) {
         Thread {
             try {
-                val mqttClient = MqttClient("tcp://192.168.0.155:1883", MqttClient.generateClientId(), null)
+                val mqttClient =
+                    MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
 
                 val options = MqttConnectOptions().apply {
-                    userName = "remco"
-                    password = "remco".toCharArray()
+                    userName = "asvz"
+                    password = "asvz".toCharArray()
                 }
 
                 mqttClient.connect(options)
 
-                val topic = "test"
+                val topic = "sonde1"
                 val message = MqttMessage().apply {
                     payload = "servo".toByteArray()
                 }
