@@ -31,7 +31,6 @@ class MQTTService : Service() {
     companion object {
         private const val CHANNEL_ID = "foreground_service_channel"
         private const val mqttBroker = "tcp://192.168.0.136:1883"
-        private var devices = arrayOf("available_devices")
         private var hasChecked = false
     }
 
@@ -42,9 +41,9 @@ class MQTTService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
+        subscribeMQTT()
         createNotificationChannel()
         startForegroundService()
-        subscribeMQTT()
     }
 
     private fun startForegroundService() {
@@ -81,9 +80,10 @@ class MQTTService : Service() {
                 Log.d("MQTTService", "Message arrived: ${message.toString()}")
                 message?.let {
                     val messageString = String(it.payload)  // Convert byte array to string
-                    if (messageString == "beep_detected") {
+                    if (messageString.startsWith("beep_detected")) {
                         sendNotification()
                     }
+
                     if (messageString.startsWith("who is here{")) {
                         val updatedString = messageString.replace("who is here", "")
 
@@ -92,7 +92,12 @@ class MQTTService : Service() {
 
                         val sendingArray =
                             Array(availableDevices.length()) { i -> availableDevices.getString(i) }
-                        devices = sendingArray
+
+                        Log.d("devices", DeviceManager.devices.joinToString(", "))
+                        DeviceManager.updateDevices(sendingArray)
+                        Log.d("devices", DeviceManager.devices.joinToString(", "))
+
+
                         subscribeMQTT()
 
                     }
@@ -106,7 +111,7 @@ class MQTTService : Service() {
 
         try {
             mqttClient.connect(options)
-            mqttClient.subscribe(devices)
+            mqttClient.subscribe(DeviceManager.devices)
             if (!hasChecked) {
                 sendMQTTMessage(
                     "available_devices",

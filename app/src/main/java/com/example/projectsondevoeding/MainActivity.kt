@@ -7,12 +7,17 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.json.JSONObject
 import java.lang.reflect.Executable
 
 class MainActivity : AppCompatActivity() {
@@ -81,9 +86,28 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("MQTT service error", "Is the server running?", e)
         }
+
+        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+
+
+        DeviceManager.devices.forEach { device ->
+            val button = Button(this)
+            button.text = "Start/Stop $device"
+            button.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            button.setOnClickListener {
+                startStopSondeVoeding()
+            }
+
+            buttonContainer.addView(button)
+        }
+
     }
 
-    fun startStopSondeVoeding(view: View) {
+    private fun startStopSondeVoeding() {
         Thread {
             try {
                 val mqttClient =

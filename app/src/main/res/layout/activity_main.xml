@@ -26,18 +26,17 @@
         android:layout_marginTop="339dp"
         android:layout_marginBottom="44dp"
         android:text="Krijgt u geen melding? Klik dan op de knop hieronder om op de start/stop knop te drukken."
-        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintBottom_toTopOf="@+id/buttonContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/button"
+    <LinearLayout
+        android:id="@+id/buttonContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="249dp"
-        android:text="Start/Stop sondevoeding"
-        android:onClick="startStopSondeVoeding"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
