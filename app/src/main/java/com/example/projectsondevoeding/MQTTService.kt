@@ -63,7 +63,7 @@ class MQTTService : Service() {
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun subscribeMQTT() {
+    fun subscribeMQTT() {
         val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
         val options = MqttConnectOptions().apply {
             userName = "asvz"
@@ -112,6 +112,7 @@ class MQTTService : Service() {
         try {
             mqttClient.connect(options)
             mqttClient.subscribe(DeviceManager.devices)
+
             if (!hasChecked) {
                 sendMQTTMessage(
                     "available_devices",
@@ -153,7 +154,7 @@ class MQTTService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_HIGH
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
                 enableVibration(true)
@@ -217,7 +218,7 @@ class NotificationReceiver : BroadcastReceiver() {
             Log.d("NotificationReceiver", "Ignore button clicked")
             val service = MQTTService()
             service.sendMQTTMessage(
-                "sonde1",
+                "sonde1", //
                 MqttMessage().apply { payload = "servo".toByteArray() })
         }
     }

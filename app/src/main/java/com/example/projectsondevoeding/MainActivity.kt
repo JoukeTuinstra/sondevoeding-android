@@ -48,8 +48,36 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                 REQUEST_CODE_POST_NOTIFICATIONS
             )
-        } else {
-            startMQTTService()
+        }
+
+        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+
+        startMQTTService()
+
+        Thread.sleep(500)
+
+        DeviceManager.devices.forEach { device ->
+            val button = Button(this)
+            button.text = "Klik om meldingen te krijgen van: $device"
+            button.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            button.setOnClickListener {
+                manageNotifs(device)
+            }
+
+            buttonContainer.addView(button)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun manageNotifs(device: String) {
+        Log.d("button", "subscribed to $device")
+
+        if (!DeviceManager.subscribed.contains(device)) {
+            DeviceManager.updateSubscribed(device)
         }
     }
 
@@ -77,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     private fun startMQTTService() {
         val serviceIntent = Intent(this, MQTTService::class.java)
 
+
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
@@ -85,24 +114,6 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e("MQTT service error", "Is the server running?", e)
-        }
-
-        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
-
-
-        DeviceManager.devices.forEach { device ->
-            val button = Button(this)
-            button.text = "Start/Stop $device"
-            button.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-
-            button.setOnClickListener {
-                startStopSondeVoeding()
-            }
-
-            buttonContainer.addView(button)
         }
 
     }
