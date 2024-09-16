@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        startMQTTService()
         setContentView(R.layout.activity_main)
         checkAndRequestNotificationPermission()
     }
@@ -49,31 +50,11 @@ class MainActivity : AppCompatActivity() {
                 REQUEST_CODE_POST_NOTIFICATIONS
             )
         }
-
-        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
-
-        startMQTTService()
-
-        Thread.sleep(500)
-
-        DeviceManager.devices.forEach { device ->
-            val button = Button(this)
-            button.text = "Klik om meldingen te krijgen van: $device"
-            button.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-
-            button.setOnClickListener {
-                manageNotifs(device)
-            }
-
-            buttonContainer.addView(button)
-        }
     }
 
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun manageNotifs(device: String) {
+    fun manageNotifs(device: String) {
         Log.d("button", "subscribed to $device")
 
         if (!DeviceManager.subscribed.contains(device)) {
@@ -100,6 +81,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
     }
 
     private fun startMQTTService() {

@@ -13,7 +13,8 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -24,7 +25,6 @@ import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.json.JSONObject
-import kotlin.reflect.typeOf
 
 class MQTTService : Service() {
 
@@ -80,7 +80,7 @@ class MQTTService : Service() {
                 Log.d("MQTTService", "Message arrived: ${message.toString()}")
                 message?.let {
                     val messageString = String(it.payload)  // Convert byte array to string
-                    if (messageString.startsWith("beep_detected")) {
+                    if (messageString.startsWith("beep")) {
                         sendNotification()
                     }
 
@@ -93,10 +93,7 @@ class MQTTService : Service() {
                         val sendingArray =
                             Array(availableDevices.length()) { i -> availableDevices.getString(i) }
 
-                        Log.d("devices", DeviceManager.devices.joinToString(", "))
                         DeviceManager.updateDevices(sendingArray)
-                        Log.d("devices", DeviceManager.devices.joinToString(", "))
-
 
                         subscribeMQTT()
 
@@ -120,7 +117,7 @@ class MQTTService : Service() {
                 hasChecked = true
             }
         } catch (e: Exception) {
-            Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e.message}")
+            Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e}")
         }
     }
 
