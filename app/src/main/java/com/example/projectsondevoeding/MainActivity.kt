@@ -1,10 +1,14 @@
 package com.example.projectsondevoeding
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -27,13 +31,41 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_CODE_POST_NOTIFICATIONS = 1
     }
 
+    private var mqttService: MQTTService? = null
+    private var isBound = false
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as MQTTService.LocalBinder
+            mqttService = binder.getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            isBound = false
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startMQTTService()
         setContentView(R.layout.activity_main)
         checkAndRequestNotificationPermission()
+        startMQTTService()
+
+        // Bind to the service
+        Intent(this, MQTTService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
+        }
     }
 
 
@@ -54,14 +86,47 @@ class MainActivity : AppCompatActivity() {
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun manageNotifs(device: String) {
-        Log.d("button", "subscribed to $device")
+    fun refreshAvailable(view: View) {
+        if (isBound) {
+            mqttService?.sendMQTTMessage(
+                "available_devices",
+                MqttMessage().apply { payload = "who_is_here".toByteArray() })
+        } else {
+            Log.e("MainActivity", "Service is not bound!")
+        }
+
+        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+
+        DeviceManager.devices.forEach { device ->
+            val button = Button(this)
+            button.text = "Klik om meldingen te krijgen van: $device"
+            button.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            button.setOnClickListener {
+                manageNotifs(device)
+            }
+
+            buttonContainer.addView(button)
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun manageNotifs(device: String) {
 
         if (!DeviceManager.subscribed.contains(device)) {
             DeviceManager.updateSubscribed(device)
         }
-    }
 
+        if (isBound) {
+            mqttService?.subscribeMQTT(DeviceManager.subscribed)
+        } else {
+            Log.e("MainActivity", "Service is not bound!")
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onRequestPermissionsResult(
@@ -131,5 +196,6 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
     }
+
 }
 

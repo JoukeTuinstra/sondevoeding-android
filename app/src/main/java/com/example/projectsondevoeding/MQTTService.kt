@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.RingtoneManager
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -34,14 +35,20 @@ class MQTTService : Service() {
         private var hasChecked = false
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+    private val binder = LocalBinder()
+
+    inner class LocalBinder : Binder() {
+        fun getService(): MQTTService = this@MQTTService
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        return binder
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
-        subscribeMQTT()
+        subscribeMQTT(DeviceManager.devices)
         createNotificationChannel()
         startForegroundService()
     }
@@ -63,7 +70,7 @@ class MQTTService : Service() {
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun subscribeMQTT() {
+    fun subscribeMQTT(topics: Array<String>) {
         val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
         val options = MqttConnectOptions().apply {
             userName = "asvz"
@@ -95,7 +102,6 @@ class MQTTService : Service() {
 
                         DeviceManager.updateDevices(sendingArray)
 
-                        subscribeMQTT()
 
                     }
                 }
@@ -108,7 +114,7 @@ class MQTTService : Service() {
 
         try {
             mqttClient.connect(options)
-            mqttClient.subscribe(DeviceManager.devices)
+            mqttClient.subscribe(topics)
 
             if (!hasChecked) {
                 sendMQTTMessage(
@@ -184,7 +190,7 @@ class MQTTService : Service() {
             .setContentText("Sondevoeding piept!")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Sondevoeding piept! Zorg ervoor dat u onmiddellijk actie onderneemt.")
+                    .bigText("Sondevoeding piept! Zorg ervoor dat u actie onderneemt.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
