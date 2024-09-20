@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onDeviceAvailable(deviceName: String) {
         Log.d("MainActivity", "Device available: $deviceName")
 
@@ -48,11 +49,14 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             // Add deviceName to a UI element like a TextView or ListView
             val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
             val button = Button(this)
-            button.text = "Klik om meldingen te krijgen van:: $deviceName"
+            button.text = "Klik om meldingen te krijgen van: $deviceName"
             button.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
+            button.setOnClickListener{
+                manageNotifs(deviceName)
+            }
             buttonContainer.addView(button)
         }
     }
@@ -116,7 +120,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         }
 
         if (isBound) {
-            mqttService?.subscribeMQTT(DeviceManager.subscribed)
+            mqttService?.subscribeMQTT(arrayOf("available_devices", "beep_detection"))
         } else {
             Log.e("MainActivity", "Service is not bound!")
         }

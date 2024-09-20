@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.os.Binder
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -93,7 +92,8 @@ class MQTTService : Service() {
                 message?.let {
                     val messageString = String(it.payload)  // Convert byte array to string
                     if (messageString.startsWith("beep")) {
-                        sendNotification()
+                        sendNotification(messageString.last())
+                        println(messageString.last())
                     }
 
                     if (messageString.startsWith("who is here{")) {
@@ -172,8 +172,8 @@ class MQTTService : Service() {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun sendNotification() {
-        val ACTION_SNOOZE = "projectsondevoeding.ACTION_SNOOZE"
+    fun sendNotification(id: Char) {
+        val ACTION_SNOOZE = "projectsondevoeding.ACTION_SNOOZE$id"
 
         val snoozeIntent = Intent(this, NotificationReceiver::class.java).apply {
             action = ACTION_SNOOZE
@@ -192,7 +192,7 @@ class MQTTService : Service() {
             .setContentText("Sondevoeding piept!")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Sondevoeding piept! Zorg ervoor dat u actie onderneemt.")
+                    .bigText("Sondevoeding $id piept! Zorg ervoor dat u actie onderneemt.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
@@ -218,12 +218,14 @@ class NotificationReceiver : BroadcastReceiver() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (intent?.action == "projectsondevoeding.ACTION_SNOOZE") {
+        if (intent?.action?.startsWith("projectsondevoeding.ACTION_SNOOZE") == true) {
             // Handle the action here, for example, call buttonClicked()
             Log.d("NotificationReceiver", "Ignore button clicked")
             val service = MQTTService()
+            val id = intent.action?.last()
+            println("sonde$id")
             service.sendMQTTMessage(
-                "sonde1", //
+                "sonde$id", //
                 MqttMessage().apply { payload = "servo".toByteArray() })
         }
     }
