@@ -12,10 +12,9 @@ import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.util.Log
-import android.widget.Button
-import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -35,6 +34,7 @@ class MQTTService : Service() {
         private var hasChecked = false
     }
 
+    private var callback: MQTTServiceCallback? = null  // Declare the callback
     private val binder = LocalBinder()
 
     inner class LocalBinder : Binder() {
@@ -45,13 +45,18 @@ class MQTTService : Service() {
         return binder
     }
 
+    fun setCallback(callback: MQTTServiceCallback) {
+        this.callback = callback
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
-        subscribeMQTT(DeviceManager.devices)
+        subscribeMQTT(arrayOf("available_devices"))
         createNotificationChannel()
         startForegroundService()
     }
+
 
     private fun startForegroundService() {
         val notificationIntent = Intent(this, MainActivity::class.java)
@@ -93,14 +98,11 @@ class MQTTService : Service() {
 
                     if (messageString.startsWith("who is here{")) {
                         val updatedString = messageString.replace("who is here", "")
+                        val availableDevice =
+                            JSONObject(updatedString).get("device_name").toString()
 
-                        val availableDevices = JSONObject(updatedString).getJSONObject("topics")
-                            .getJSONArray("sending")
-
-                        val sendingArray =
-                            Array(availableDevices.length()) { i -> availableDevices.getString(i) }
-
-                        DeviceManager.updateDevices(sendingArray)
+                        DeviceManager.updateDevices(availableDevice)
+                        callback?.onDeviceAvailable(availableDevice)
 
 
                     }
@@ -227,3 +229,4 @@ class NotificationReceiver : BroadcastReceiver() {
     }
 
 }
+

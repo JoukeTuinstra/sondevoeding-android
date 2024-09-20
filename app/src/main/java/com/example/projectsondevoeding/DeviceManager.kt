@@ -1,11 +1,11 @@
 package com.example.projectsondevoeding
 
 object DeviceManager {
-    var devices: Array<String> = arrayOf("available_devices")
+    var devices: Array<String> = arrayOf()
     var subscribed: Array<String> = arrayOf()
 
-    fun updateDevices(newDevices: Array<String>) {
-        devices = newDevices
+    fun updateDevices(newDevices: String) {
+        devices += newDevices
     }
 
     fun updateSubscribed(newSubscribes: String) {

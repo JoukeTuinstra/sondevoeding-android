@@ -16,15 +16,9 @@ import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.json.JSONObject
-import java.lang.reflect.Executable
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
 
     companion object {
@@ -38,11 +32,30 @@ class MainActivity : AppCompatActivity() {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as MQTTService.LocalBinder
             mqttService = binder.getService()
+            mqttService?.setCallback(this@MainActivity)  // Set the callback to this activity
             isBound = true
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             isBound = false
+        }
+    }
+
+    override fun onDeviceAvailable(deviceName: String) {
+        // This is where you handle what happens when a device becomes available
+        Log.d("MainActivity", "Device available: $deviceName")
+
+        // You can add logic to update the UI or trigger an action
+        runOnUiThread {
+            // Add deviceName to a UI element like a TextView or ListView
+            val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+            val button = Button(this)
+            button.text = "Device available: $deviceName"
+            button.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            buttonContainer.addView(button)
         }
     }
 
@@ -94,23 +107,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             Log.e("MainActivity", "Service is not bound!")
         }
-
-        val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
-
-        DeviceManager.devices.forEach { device ->
-            val button = Button(this)
-            button.text = "Klik om meldingen te krijgen van: $device"
-            button.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-
-            button.setOnClickListener {
-                manageNotifs(device)
-            }
-
-            buttonContainer.addView(button)
-        }
     }
 
 
@@ -152,7 +148,6 @@ class MainActivity : AppCompatActivity() {
     private fun startMQTTService() {
         val serviceIntent = Intent(this, MQTTService::class.java)
 
-
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
@@ -162,40 +157,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("MQTT service error", "Is the server running?", e)
         }
-
     }
+}
 
-    private fun startStopSondeVoeding() {
-        Thread {
-            try {
-                val mqttClient =
-                    MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
-
-                val options = MqttConnectOptions().apply {
-                    userName = "asvz"
-                    password = "asvz".toCharArray()
-                }
-
-                mqttClient.connect(options)
-
-                val topic = "sonde1"
-                val message = MqttMessage().apply {
-                    payload = "servo".toByteArray()
-                }
-
-                mqttClient.publish(topic, message)
-                mqttClient.disconnect()
-
-
-            } catch (e: Exception) {
-                Log.e(
-                    "MQTT Error",
-                    "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
-                    e
-                )
-            }
-        }.start()
-    }
-
+interface MQTTServiceCallback {
+    fun onDeviceAvailable(deviceName: String)
 }
 
