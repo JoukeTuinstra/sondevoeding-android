@@ -5,5 +5,6 @@
     <string name="channel_name">Sondepomp meldingen</string>
     <string name="channel_description">Hier staan de instellingen van de sondepomp meldingen</string>
     <string name="infoText">Wacht tot er aangegeven wordt dat u de app kunt sluiten, dan kunt u meldingen ontvangen.</string>
+    <string name ="refreshResults">Ververs resultaten</string>
 
 </resources>

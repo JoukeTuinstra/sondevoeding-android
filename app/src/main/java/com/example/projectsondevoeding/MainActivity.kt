@@ -42,15 +42,13 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
     }
 
     override fun onDeviceAvailable(deviceName: String) {
-        // This is where you handle what happens when a device becomes available
         Log.d("MainActivity", "Device available: $deviceName")
 
-        // You can add logic to update the UI or trigger an action
         runOnUiThread {
             // Add deviceName to a UI element like a TextView or ListView
             val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
             val button = Button(this)
-            button.text = "Device available: $deviceName"
+            button.text = "Klik om meldingen te krijgen van:: $deviceName"
             button.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
