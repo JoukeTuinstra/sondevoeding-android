@@ -42,27 +42,6 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onDeviceAvailable(deviceName: String) {
-        Log.d("MainActivity", "Device available: $deviceName")
-
-        runOnUiThread {
-            // Add deviceName to a UI element like a TextView or ListView
-            val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
-            val button = Button(this)
-            button.text = "Klik om meldingen te krijgen van: $deviceName"
-            button.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            button.setOnClickListener{
-                manageNotifs(deviceName)
-            }
-            buttonContainer.addView(button)
-        }
-    }
-
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -83,6 +62,28 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onDeviceAvailable(deviceName: String) {
+        if (DeviceManager.devices.contains(deviceName)) {
+            Log.d("MainActivity", "Device available: $deviceName")
+
+            runOnUiThread {
+                // Add deviceName to a UI element like a TextView or ListView
+                val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+                val button = Button(this)
+                button.text = "Klik om meldingen te krijgen van: $deviceName"
+                button.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                button.setOnClickListener {
+                    manageNotifs(deviceName)
+                }
+                buttonContainer.addView(button)
+            }
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun checkAndRequestNotificationPermission() {
@@ -96,33 +97,6 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
                 arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                 REQUEST_CODE_POST_NOTIFICATIONS
             )
-        }
-    }
-
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun refreshAvailable(view: View) {
-        if (isBound) {
-            mqttService?.sendMQTTMessage(
-                "available_devices",
-                MqttMessage().apply { payload = "who_is_here".toByteArray() })
-        } else {
-            Log.e("MainActivity", "Service is not bound!")
-        }
-    }
-
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun manageNotifs(device: String) {
-
-        if (!DeviceManager.subscribed.contains(device)) {
-            DeviceManager.updateSubscribed(device)
-        }
-
-        if (isBound) {
-            mqttService?.subscribeMQTT(arrayOf("available_devices", "beep_detection"))
-        } else {
-            Log.e("MainActivity", "Service is not bound!")
         }
     }
 
@@ -145,6 +119,36 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             }
         }
 
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun refreshAvailable(view: View) {
+        if (isBound) {
+            mqttService?.sendMQTTMessage(
+                "available_devices",
+                MqttMessage().apply { payload = "who_is_here".toByteArray() })
+            DeviceManager.devices = arrayOf()
+            findViewById<LinearLayout>(R.id.buttonContainer).removeAllViews()
+
+        } else {
+            Log.e("MainActivity", "Service is not bound!")
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun manageNotifs(device: String) {
+
+        if (!DeviceManager.subscribed.contains(device)) {
+            DeviceManager.updateSubscribed(device)
+        }
+
+        if (isBound) {
+            mqttService?.subscribeMQTT(arrayOf("available_devices", "beep_detection"))
+        } else {
+            Log.e("MainActivity", "Service is not bound!")
+        }
     }
 
     private fun startMQTTService() {
