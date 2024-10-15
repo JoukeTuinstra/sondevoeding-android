@@ -90,46 +90,52 @@ class MQTTService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun subscribeMQTT(topics: Array<String>) {
-        val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
-        val options = MqttConnectOptions().apply {
-            userName = "asvz"
-            password = "asvz".toCharArray()
-        }
+        try {
 
-        mqttClient.setCallback(object : MqttCallback {
-            override fun connectionLost(cause: Throwable?) {
-                Log.e("MQTTService", "Connection lost", cause)
+            val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
+            val options = MqttConnectOptions().apply {
+                userName = "asvz"
+                password = "asvz".toCharArray()
             }
 
-            @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-            override fun messageArrived(topic: String?, message: MqttMessage?) {
-                Log.d("MQTTService", "Message arrived: ${message.toString()}")
-                message?.let {
-                    val messageString = String(it.payload)  // Convert byte array to string
-                    if (messageString.startsWith("beep")) {
-                        sendNotification(messageString.last())
-                        println(messageString.last())
-                    }
+            mqttClient.setCallback(object : MqttCallback {
+                override fun connectionLost(cause: Throwable?) {
+                    Log.e("MQTTService", "Connection lost", cause)
+                    subscribeMQTT(arrayOf("available_devices", "beep_detection"))
+                }
 
-                    if (messageString.startsWith("who is here{")) {
-                        val updatedString = messageString.replace("who is here", "")
-                        val availableDevice =
-                            JSONObject(updatedString).get("device_name").toString()
+                @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    Log.d("MQTTService", "Message arrived: ${message.toString()}")
+                    message?.let {
+                        val messageString = String(it.payload)  // Convert byte array to string
+                        if (messageString.startsWith("beep")) {
+                            for (device in DeviceManager.subscribed) {
+                                if (messageString.last() == device.last()) {
+                                    sendNotification(messageString.last())
+                                    println(messageString.last())
+                                }
+                            }
+                        }
 
-                        DeviceManager.updateDevices(availableDevice)
-                        callback?.onDeviceAvailable(availableDevice)
+                        if (messageString.startsWith("who is here{")) {
+                            val updatedString = messageString.replace("who is here", "")
+                            val availableDevice =
+                                JSONObject(updatedString).get("device_name").toString()
+
+                            DeviceManager.updateDevices(availableDevice)
+                            callback?.onDeviceAvailable(availableDevice)
 
 
+                        }
                     }
                 }
-            }
 
-            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                // No-op
-            }
-        })
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // No-op
+                }
+            })
 
-        try {
             mqttClient.connect(options)
             mqttClient.subscribe(topics)
 

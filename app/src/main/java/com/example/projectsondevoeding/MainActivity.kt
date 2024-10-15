@@ -8,7 +8,9 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
     private var mqttService: MQTTService? = null
     private var isBound = false
+    private var onCooldown = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
@@ -130,6 +133,13 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
                 MqttMessage().apply { payload = "who_is_here".toByteArray() })
             DeviceManager.devices = arrayOf()
             findViewById<LinearLayout>(R.id.buttonContainer).removeAllViews()
+
+            val button = view as Button
+            button.isEnabled = false
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                button.isEnabled = true
+            }, 1500)
 
         } else {
             Log.e("MainActivity", "Service is not bound!")
