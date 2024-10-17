@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#F0F0F0"
     tools:context=".MainActivity">
 
     <TextView
@@ -13,10 +15,14 @@
         android:layout_marginTop="64dp"
         android:text="@string/infoText"
         android:textSize="20sp"
+        android:textColor="#333333"
+        android:padding="16dp"
+        android:background="#FFFFFF"
         app:layout_constraintBottom_toTopOf="@+id/button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:elevation="4dp" />
 
     <Button
         android:id="@+id/button"
@@ -25,6 +31,9 @@
         android:onClick="refreshAvailable"
         android:layout_marginTop="35sp"
         android:text="@string/refreshResults"
+        android:backgroundTint="@color/asvzBlauw"
+        android:textColor="#FFFFFF"
+        android:padding="12dp"
         app:layout_constraintBottom_toTopOf="@+id/buttonContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -38,6 +47,8 @@
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button" />
+        app:layout_constraintTop_toBottomOf="@+id/button">
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
