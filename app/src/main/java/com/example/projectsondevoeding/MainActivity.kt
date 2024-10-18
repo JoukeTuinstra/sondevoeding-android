@@ -18,7 +18,11 @@ import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import org.eclipse.paho.client.mqttv3.MqttClient
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.lang.reflect.Executable
 
 class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
@@ -71,18 +75,33 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             Log.d("MainActivity", "Device available: $deviceName")
 
             runOnUiThread {
-                // Add deviceName to a UI element like a TextView or ListView
                 val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
-                val button = Button(this)
-                button.text = "Klik om meldingen te krijgen van: $deviceName"
-                button.layoutParams = LinearLayout.LayoutParams(
+
+                // First button
+                val firstButton = Button(this)
+                firstButton.text = "Abonneer op: $deviceName"
+                firstButton.layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                button.setOnClickListener {
+                firstButton.setOnClickListener {
                     manageNotifs(deviceName)
                 }
-                buttonContainer.addView(button)
+
+                // Second button
+                val secondButton = Button(this)
+                secondButton.text = "Aan/Uit"
+                secondButton.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                secondButton.setOnClickListener {
+                    startStopSondevoeding(deviceName)  // A function to show device details (define this)
+                }
+
+                // Add both buttons to the container
+                buttonContainer.addView(firstButton)
+                buttonContainer.addView(secondButton)
             }
         }
     }
@@ -172,6 +191,36 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             }
         } catch (e: Exception) {
             Log.e("MQTT service error", "Is the server running?", e)
+        }
+    }
+
+    private fun startStopSondevoeding(device: String) {
+        try {
+            val mqttClient =
+                MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
+
+            val options = MqttConnectOptions().apply {
+                userName = "asvz"
+                password = "asvz".toCharArray()
+            }
+
+            mqttClient.connect(options)
+            mqttClient.publish(device, MqttMessage().apply { payload = "servo".toByteArray() })
+            mqttClient.disconnect()
+
+
+        } catch (e: Exception) {
+            Log.e(
+                "MQTT Error",
+                "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
+                e
+            )
+        } catch (e: MqttException) {
+            Log.e(
+                "MQTT Error",
+                "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
+                e
+            )
         }
     }
 }
