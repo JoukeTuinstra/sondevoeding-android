@@ -90,13 +90,15 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
                 // Second button
                 val secondButton = Button(this)
+                val id = Integer.parseInt(deviceName.last().toString())
                 secondButton.text = "Aan/Uit"
+                secondButton.id = id
                 secondButton.layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
                 secondButton.setOnClickListener {
-                    startStopSondevoeding(deviceName)  // A function to show device details (define this)
+                    startStopSondevoeding(deviceName, id.toChar())  // A function to show device details (define this)
                 }
 
                 // Add both buttons to the container
@@ -194,7 +196,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         }
     }
 
-    private fun startStopSondevoeding(device: String) {
+    private fun startStopSondevoeding(device: String, id: Char) {
         try {
             val mqttClient =
                 MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
@@ -208,14 +210,15 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             mqttClient.publish(device, MqttMessage().apply { payload = "servo".toByteArray() })
             mqttClient.disconnect()
 
+            val button = findViewById<LinearLayout>(id.toInt())
+            button.isEnabled = false
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                button.isEnabled = true
+            }, 5000)
+
 
         } catch (e: Exception) {
-            Log.e(
-                "MQTT Error",
-                "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
-                e
-            )
-        } catch (e: MqttException) {
             Log.e(
                 "MQTT Error",
                 "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
