@@ -5,50 +5,54 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F0F0"
+    android:background="#F9F9F9"
     tools:context=".MainActivity">
 
+    <!-- Simple TextView with improved padding and clean design -->
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="40dp"
         android:text="@string/infoText"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textColor="#333333"
-        android:padding="16dp"
+        android:padding="20dp"
         android:background="#FFFFFF"
-        app:layout_constraintBottom_toTopOf="@+id/button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:elevation="4dp"
+        android:gravity="center"
         app:layout_constraintTop_toTopOf="parent"
-        android:elevation="4dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Simple Button with flat design and minor touch feedback -->
     <Button
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="refreshAvailable"
-        android:layout_marginTop="35sp"
         android:text="@string/refreshResults"
+        android:paddingHorizontal="36dp"
+        android:paddingVertical="12dp"
         android:backgroundTint="@color/asvzBlauw"
         android:textColor="#FFFFFF"
-        android:padding="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/buttonContainer"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textAllCaps="false"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toBottomOf="@id/textView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:stateListAnimator="@null"/>
 
+    <!-- Button container, centered for future buttons -->
     <LinearLayout
         android:id="@+id/buttonContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="25sp"
+        android:layout_marginTop="24dp"
         android:orientation="horizontal"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/button">
-</LinearLayout>
+        app:layout_constraintTop_toBottomOf="@id/button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
