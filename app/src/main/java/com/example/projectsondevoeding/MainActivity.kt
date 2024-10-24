@@ -14,15 +14,14 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
-import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
-import java.lang.reflect.Executable
 
 class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
@@ -33,7 +32,10 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
     private var mqttService: MQTTService? = null
     private var isBound = false
-    private var onCooldown = false
+
+    private lateinit var nameInput: EditText
+    private val PREFS_NAME = "user_prefs"
+    private val KEY_NAME = "name_key"
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
@@ -55,6 +57,20 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         checkAndRequestNotificationPermission()
         startMQTTService()
 
+        nameInput = findViewById(R.id.nameInput)
+
+        // Load the saved name from SharedPreferences
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedName = sharedPreferences.getString(KEY_NAME, "")
+        nameInput.setText(savedName)
+
+        // Save the name whenever the user changes it
+        nameInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                saveNameToPreferences()
+            }
+        }
+
         // Bind to the service
         Intent(this, MQTTService::class.java).also { intent ->
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
@@ -67,6 +83,20 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             unbindService(connection)
             isBound = false
         }
+    }
+
+    private fun saveNameToPreferences() {
+        val name = nameInput.text.toString()
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString(KEY_NAME, name)
+            apply()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        saveNameToPreferences()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)

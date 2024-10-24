@@ -84,7 +84,12 @@ class MQTTService : Service() {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .build()
-        startForeground(1, notification)
+
+        try {
+            startForeground(1, notification)
+        }catch (e: Exception){
+            Log.e("create foregroundservice", "Something went wrong with starting the foregroundservice.", e)
+        }
     }
 
 
@@ -152,8 +157,8 @@ class MQTTService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun sendMQTTMessage(topic: String, message: MqttMessage) {
-        Thread {
-            try {
+        try {
+            Thread {
                 val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
 
                 val options = MqttConnectOptions().apply {
@@ -165,15 +170,14 @@ class MQTTService : Service() {
                 mqttClient.publish(topic, message)
                 mqttClient.disconnect()
 
-
-            } catch (e: Exception) {
-                Log.e(
-                    "MQTT Error",
-                    "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
-                    e
-                )
-            }
-        }.start()
+            }.start()
+        } catch (e: Exception) {
+            Log.e(
+                "MQTT Error",
+                "Error sending MQTT message: ${e.javaClass.simpleName} - ${e.message}",
+                e
+            )
+        }
     }
 
 
