@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
                 secondButton.setOnClickListener {
-                    startStopSondevoeding(deviceName, id.toChar())  // A function to show device details (define this)
+                    startStopSondevoeding(deviceName, id)  // A function to show device details (define this)
                 }
 
                 // Add both buttons to the container
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         }
     }
 
-    private fun startStopSondevoeding(device: String, id: Char) {
+    private fun startStopSondevoeding(device: String, id: Int) {
         try {
             val mqttClient =
                 MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
@@ -237,10 +237,11 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
             }
 
             mqttClient.connect(options)
-            mqttClient.publish(device, MqttMessage().apply { payload = "servo".toByteArray() })
+            val name = nameInput.text
+            mqttClient.publish(device, MqttMessage().apply { payload = "servo by ${name}".toByteArray() })
             mqttClient.disconnect()
 
-            val button = findViewById<LinearLayout>(id.toInt())
+            val button = findViewById<Button>(id)
             button.isEnabled = false
 
             Handler(Looper.getMainLooper()).postDelayed({
