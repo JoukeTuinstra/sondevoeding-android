@@ -18,6 +18,9 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -29,7 +32,7 @@ class MQTTService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "foreground_service_channel"
-        private const val mqttBroker = "tcp://192.168.0.136:1883"
+        private const val mqttBroker = "tcp://192.168.110.98:1883"
         private var hasChecked = false
     }
 
@@ -51,16 +54,17 @@ class MQTTService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
-        subscribeMQTT(arrayOf("available_devices"))
         createNotificationChannel()
         startForegroundService()
+        subscribeMQTT(arrayOf("available_devices"))
+
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
                 enableVibration(true)
@@ -95,70 +99,67 @@ class MQTTService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun subscribeMQTT(topics: Array<String>) {
-        try {
 
-            val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
-            val options = MqttConnectOptions().apply {
-                userName = "asvz"
-                password = "asvz".toCharArray()
+        val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
+        val options = MqttConnectOptions().apply {
+            userName = "asvz"
+            password = "asvz".toCharArray()
+        }
+
+        mqttClient.setCallback(object : MqttCallback {
+            override fun connectionLost(cause: Throwable?) {
+                Log.e("MQTTService", "Connection lost", cause)
+                subscribeMQTT(arrayOf("available_devices", "beep_detection"))
             }
 
-            mqttClient.setCallback(object : MqttCallback {
-                override fun connectionLost(cause: Throwable?) {
-                    Log.e("MQTTService", "Connection lost", cause)
-                    subscribeMQTT(arrayOf("available_devices", "beep_detection"))
-                }
-
-                @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-                override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    Log.d("MQTTService", "Message arrived: ${message.toString()}")
-                    message?.let {
-                        val messageString = String(it.payload)  // Convert byte array to string
-                        if (messageString.startsWith("beep")) {
-                            for (device in DeviceManager.subscribed) {
-                                if (messageString.last() == device.last()) {
-                                    sendNotification(messageString.last())
-                                    println(messageString.last())
-                                }
+            @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                Log.d("MQTTService", "Message arrived: ${message.toString()}")
+                message?.let {
+                    val messageString = String(it.payload)  // Convert byte array to string
+                    if (messageString.startsWith("beep")) {
+                        for (device in DeviceManager.subscribed) {
+                            if (messageString.last() == device.last()) {
+                                sendNotification(messageString.last())
+                                println(messageString.last())
                             }
                         }
+                    }
 
-                        if (messageString.startsWith("who is here{")) {
-                            val updatedString = messageString.replace("who is here", "")
-                            val availableDevice =
-                                JSONObject(updatedString).get("device_name").toString()
+                    if (messageString.startsWith("who is here{")) {
+                        val updatedString = messageString.replace("who is here", "")
+                        val availableDevice =
+                            JSONObject(updatedString).get("device_name").toString()
 
-                            DeviceManager.updateDevices(availableDevice)
-                            callback?.onDeviceAvailable(availableDevice)
+                        DeviceManager.updateDevices(availableDevice)
+                        callback?.onDeviceAvailable(availableDevice)
 
-
-                        }
                     }
                 }
-
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                    // No-op
-                }
-            })
-
-            mqttClient.connect(options)
-            mqttClient.subscribe(topics)
-
-            if (!hasChecked) {
-                sendMQTTMessage(
-                    "available_devices",
-                    MqttMessage().apply { payload = "who_is_here".toByteArray() })
-                hasChecked = true
             }
-        } catch (e: Exception) {
-            Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e}")
+
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                // No-op
+            }
+        })
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                mqttClient.connect(options)
+                mqttClient.subscribe(topics)
+                if (!hasChecked) {
+                    sendMQTTMessage("available_devices",
+                        MqttMessage().apply { payload = "who_is_here".toByteArray() })
+                    hasChecked = true
+                }
+            } catch (e: Exception) {
+                Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e}")
+            }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun sendMQTTMessage(topic: String, message: MqttMessage) {
         try {
-            Thread {
                 val mqttClient = MqttClient(mqttBroker, MqttClient.generateClientId(), null)
 
                 val options = MqttConnectOptions().apply {
@@ -170,7 +171,6 @@ class MQTTService : Service() {
                 mqttClient.publish(topic, message)
                 mqttClient.disconnect()
 
-            }.start()
         } catch (e: Exception) {
             Log.e(
                 "MQTT Error",

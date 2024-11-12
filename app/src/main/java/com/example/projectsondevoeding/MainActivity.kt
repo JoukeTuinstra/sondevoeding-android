@@ -104,37 +104,38 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
         if (DeviceManager.devices.contains(deviceName)) {
             Log.d("MainActivity", "Device available: $deviceName")
 
-            runOnUiThread {
-                val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
+            val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
 
-                // First button
-                val firstButton = Button(this)
-                firstButton.text = "Abonneer op: $deviceName"
-                firstButton.layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                firstButton.setOnClickListener {
-                    manageNotifs(deviceName)
-                }
-
-                // Second button
-                val secondButton = Button(this)
-                val id = Integer.parseInt(deviceName.last().toString())
-                secondButton.text = "Aan/Uit"
-                secondButton.id = id
-                secondButton.layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                secondButton.setOnClickListener {
-                    startStopSondevoeding(deviceName, id)  // A function to show device details (define this)
-                }
-
-                // Add both buttons to the container
-                buttonContainer.addView(firstButton)
-                buttonContainer.addView(secondButton)
+            // First button
+            val firstButton = Button(this)
+            firstButton.text = "Abonneer op: $deviceName"
+            firstButton.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            firstButton.setOnClickListener {
+                manageNotifs(deviceName)
             }
+
+            // Second button
+            val secondButton = Button(this)
+            val id = Integer.parseInt(deviceName.last().toString())
+            secondButton.text = "Aan/Uit"
+            secondButton.id = id
+            secondButton.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            secondButton.setOnClickListener {
+                startStopSondevoeding(
+                    deviceName, id
+                )  // A function to show device details (define this)
+            }
+
+            // Add both buttons to the container
+            buttonContainer.addView(firstButton)
+            buttonContainer.addView(secondButton)
+
+            println("gets here")
+
         }
     }
 
@@ -213,9 +214,9 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
     }
 
     private fun startMQTTService() {
-        val serviceIntent = Intent(this, MQTTService::class.java)
-
         try {
+            val serviceIntent = Intent(this, MQTTService::class.java)
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
@@ -229,16 +230,19 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
     private fun startStopSondevoeding(device: String, id: Int) {
         try {
             val mqttClient =
-                MqttClient("tcp://192.168.0.136:1883", MqttClient.generateClientId(), null)
+                MqttClient("tcp://192.168.110.98:1883", MqttClient.generateClientId(), null)
 
             val options = MqttConnectOptions().apply {
                 userName = "asvz"
                 password = "asvz".toCharArray()
             }
 
+
             mqttClient.connect(options)
             val name = nameInput.text
-            mqttClient.publish(device, MqttMessage().apply { payload = "servo by ${name}".toByteArray() })
+            mqttClient.publish(
+                device,
+                MqttMessage().apply { payload = "servo by ${name}".toByteArray() })
             mqttClient.disconnect()
 
             val button = findViewById<Button>(id)
