@@ -23,6 +23,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 
+
 class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
 
@@ -101,7 +102,11 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onDeviceAvailable(deviceName: String) {
+
         if (DeviceManager.devices.contains(deviceName)) {
+
+            val refreshButton = findViewById<Button>(R.id.button)
+            refreshButton.visibility = View.VISIBLE
             Log.d("MainActivity", "Device available: $deviceName")
 
             val buttonContainer = findViewById<LinearLayout>(R.id.buttonContainer)
@@ -188,6 +193,7 @@ class MainActivity : AppCompatActivity(), MQTTServiceCallback {
 
             val button = view as Button
             button.isEnabled = false
+            button.setBackgroundColor(2)
 
             Handler(Looper.getMainLooper()).postDelayed({
                 button.isEnabled = true

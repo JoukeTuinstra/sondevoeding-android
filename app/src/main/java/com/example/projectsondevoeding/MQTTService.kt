@@ -152,7 +152,8 @@ class MQTTService : Service() {
                     hasChecked = true
                 }
             } catch (e: Exception) {
-                Log.e("Error", "Error while subscribing ${e.javaClass.simpleName} - ${e}")
+                Log.e("Error", "Error while subscribing ${e.javaClass.simpleName}, retryinh - ${e}")
+                subscribeMQTT(arrayOf("available_devices", "beep_detection"))
             }
         }
     }

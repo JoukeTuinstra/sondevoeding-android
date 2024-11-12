@@ -55,6 +55,7 @@
         android:paddingHorizontal="36dp"
         android:paddingVertical="12dp"
         android:stateListAnimator="@null"
+        android:visibility="invisible"
         android:text="@string/refreshResults"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
